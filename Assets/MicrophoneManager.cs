@@ -49,7 +49,8 @@ public class MicrophoneManager : MonoBehaviour
 		toneAnalyzer.VersionDate = "2017-05-26";
 		//toneAnalyzer.GetToneAnalyze(OnGetToneAnalyze, OnFail, "I hate these new features On #ThisPhone after the update.");
 
-		dictationRecognizer = new DictationRecognizer();
+		dictationRecognizer = new DictationRecognizer(ConfidenceLevel.Rejected);
+		dictationRecognizer.AutoSilenceTimeoutSeconds = 5;
 
 		dictationRecognizer.DictationHypothesis += (text) =>
 		{
@@ -63,16 +64,17 @@ public class MicrophoneManager : MonoBehaviour
 			var outText = "result: " + text;
 			Debug.Log(outText);
 			debug.text = outText;
-			if (text.Contains("debug off"))
+			if (text.Contains("debug off") || text.Contains("the bug off"))
 			{
 				debug.gameObject.SetActive(false);
 			}
-			else if (text.Contains("debug on"))
+			else if (text.Contains("debug on") || text.Contains("the bug on"))
 			{
 				debug.gameObject.SetActive(true);
 			} else if (text.Contains("come here"))
 			{
-				gameObject.transform.position = Camera.main.transform.position + Camera.main.transform.forward;
+				var p = Camera.main.transform.position + Camera.main.transform.forward;
+				gameObject.transform.position = new Vector3(p.x, gameObject.transform.position.y, p.z);
 			}
 			else
 			{
@@ -96,9 +98,8 @@ public class MicrophoneManager : MonoBehaviour
 		dictationRecognizer.DictationError += (error, hresult) =>
 		{
 			var outText = "Dictation error: " + error;
-			Debug.Log(outText);
+			Debug.LogError(outText);
 			debug.text = outText;
-			dictationRecognizer.Start();
 		};
 
 		dictationRecognizer.Start();
