@@ -63,13 +63,16 @@ public class MicrophoneManager : MonoBehaviour
 			var outText = "result: " + text;
 			Debug.Log(outText);
 			debug.text = outText;
-			if (text == "debug off")
+			if (text.Contains("debug off"))
 			{
 				debug.gameObject.SetActive(false);
 			}
-			else if (text == "debug on")
+			else if (text.Contains("debug on"))
 			{
 				debug.gameObject.SetActive(true);
+			} else if (text.Contains("come here"))
+			{
+				gameObject.transform.position = Camera.main.transform.position + Camera.main.transform.forward;
 			}
 			else
 			{
