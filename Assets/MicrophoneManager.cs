@@ -26,7 +26,7 @@ public class MicrophoneManager : MonoBehaviour
 			{"anger", Color.red},
 			{"disgust", Color.green},
 			{"fear", Color.magenta},
-			{"joy", Color.yellow},
+			{"joy", new Color(1, .65f, 0)},
 			{"sadness", Color.blue}
 		};
 		defaultColors = new List<Color>()
@@ -39,6 +39,7 @@ public class MicrophoneManager : MonoBehaviour
 		mat = gameObject.GetComponentInChildren<Renderer>().material;
 
 		StartCoroutine(GetToneAnalysis("I'm happy"));
+		StartCoroutine(TestInternet());
 
 		dictationRecognizer = new DictationRecognizer(ConfidenceLevel.Rejected);
 		dictationRecognizer.AutoSilenceTimeoutSeconds = 5;
@@ -105,6 +106,14 @@ public class MicrophoneManager : MonoBehaviour
 		mat.color = Color.Lerp(currentColors[a], currentColors[b], t);
 	}
 
+	IEnumerator TestInternet()
+	{
+		var url = "https://gateway.watsonplatform.net/";
+		var www = new WWW(url);
+		yield return www;
+		Debug.Log(url + " responded with " + www.text);
+	}
+
 	IEnumerator GetToneAnalysis(string text)
 	{
 		var headers = new Dictionary<string, string>() {
@@ -114,12 +123,12 @@ public class MicrophoneManager : MonoBehaviour
 		var www = new WWW("https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-01-01&sentences=false", Encoding.ASCII.GetBytes(text), headers);
 		yield return www;
 		string responseString = www.text;
-		var outText = responseString;
+		var outText = www.bytesDownloaded + responseString;
 		Debug.Log(outText);
 		debug.text = outText;
 		var json = new JSONObject(responseString);
 		var tones = json["document_tone"]["tones"].list;
-		currentColors = tones.Select(x => emotionColors[x["tone_id"].str]).ToList();
+		currentColors = tones.Where(x => emotionColors.ContainsKey(x["tone_id"].str)).Select(x => emotionColors[x["tone_id"].str]).ToList();
 		if (tones.Count() == 0)
 		{
 			currentColors = defaultColors;
