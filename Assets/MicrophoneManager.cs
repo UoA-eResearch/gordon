@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UI;
@@ -37,7 +38,7 @@ public class MicrophoneManager : MonoBehaviour
 
 		mat = gameObject.GetComponentInChildren<Renderer>().material;
 
-		//StartCoroutine(GetToneAnalysis("I'm happy"));
+		StartCoroutine(GetToneAnalysis("I'm happy"));
 
 		dictationRecognizer = new DictationRecognizer(ConfidenceLevel.Rejected);
 		dictationRecognizer.AutoSilenceTimeoutSeconds = 5;
@@ -106,38 +107,26 @@ public class MicrophoneManager : MonoBehaviour
 
 	IEnumerator GetToneAnalysis(string text)
 	{
-		var www = UnityWebRequest.Post("https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-01-01&sentences=false", text);
-		www.SetRequestHeader("Authorization", "Basic ZjBmYTZlNjEtODJlNy00YmY2LWFkZWItNzM5MmUwMjUzYzhiOlQ4bEN1WWx3RWVWSQ==");
-		www.SetRequestHeader("Content-Type", "text/plain");
-		yield return www.SendWebRequest();
-
-		if (www.isNetworkError || www.isHttpError)
+		var headers = new Dictionary<string, string>() {
+			{ "Authorization", "Basic ZjBmYTZlNjEtODJlNy00YmY2LWFkZWItNzM5MmUwMjUzYzhiOlQ4bEN1WWx3RWVWSQ==" },
+			{ "Content-Type", "text/plain" }
+		};
+		var www = new WWW("https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-01-01&sentences=false", Encoding.ASCII.GetBytes(text), headers);
+		yield return www;
+		string responseString = www.text;
+		var outText = responseString;
+		Debug.Log(outText);
+		debug.text = outText;
+		var json = new JSONObject(responseString);
+		var tones = json["document_tone"]["tones"].list;
+		currentColors = tones.Select(x => emotionColors[x["tone_id"].str]).ToList();
+		if (tones.Count() == 0)
 		{
-			var outText = www.error;
-			debug.text = outText;
-			Debug.LogError(outText);
+			currentColors = defaultColors;
 		}
-		else
+		else if (tones.Count() == 1)
 		{
-			string responseString = www.downloadHandler.text;
-			var json = new JSONObject(responseString);
-			var tones = json["document_tone"]["tones"].list;
-			var outText = "tone analyzer response: \n";
-			currentColors = tones.Select(x => emotionColors[x["tone_id"].str]).ToList();
-			if (tones.Count() == 0)
-			{
-				currentColors = defaultColors;
-			}
-			else if (tones.Count() == 1)
-			{
-				currentColors.Add(Color.white);
-			}
-			foreach (var emotion in tones)
-			{
-				outText += emotion["tone_id"].str + ": " + emotion["score"].f + "=" + emotionColors[emotion["tone_id"].str] + "\n";
-			}
-			Debug.Log(outText);
-			debug.text = outText;
+			currentColors.Add(Color.white);
 		}
 	}
 }
