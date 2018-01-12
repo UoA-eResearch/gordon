@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
-using UnityEngine.Networking;
 using UnityEngine.UI;
 using UnityEngine.Windows.Speech;
 
@@ -39,7 +38,6 @@ public class MicrophoneManager : MonoBehaviour
 		mat = gameObject.GetComponentInChildren<Renderer>().material;
 
 		StartCoroutine(GetToneAnalysis("I'm happy"));
-		StartCoroutine(TestInternet());
 
 		dictationRecognizer = new DictationRecognizer(ConfidenceLevel.Rejected);
 		dictationRecognizer.AutoSilenceTimeoutSeconds = 5;
@@ -104,14 +102,6 @@ public class MicrophoneManager : MonoBehaviour
 		}
 		t = Time.time / interval % 1;
 		mat.color = Color.Lerp(currentColors[a], currentColors[b], t);
-	}
-
-	IEnumerator TestInternet()
-	{
-		var url = "https://gateway.watsonplatform.net/";
-		var www = new WWW(url);
-		yield return www;
-		Debug.Log(url + " responded with " + www.text);
 	}
 
 	IEnumerator GetToneAnalysis(string text)
