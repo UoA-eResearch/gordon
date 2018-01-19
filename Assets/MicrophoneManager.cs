@@ -15,6 +15,7 @@ public class MicrophoneManager : MonoBehaviour
 	private Material mat;
 	private List<Color> currentColors;
 	private List<Color> defaultColors;
+	private Vector3 targetScale;
 	private float interval = 2;
 
 	// Use this for initialization
@@ -54,19 +55,67 @@ public class MicrophoneManager : MonoBehaviour
 			var outText = "result: " + text;
 			Debug.Log(outText);
 			debug.text = outText;
+			bool command = false;
 			if (text.Contains("debug off") || text.Contains("the bug off"))
 			{
 				debug.gameObject.SetActive(false);
+				command = true;
 			}
 			else if (text.Contains("debug on") || text.Contains("the bug on"))
 			{
 				debug.gameObject.SetActive(true);
-			} else if (text.Contains("come here"))
+				command = true;
+			}
+			if (text.Contains("come here"))
 			{
 				var p = Camera.main.transform.position + Camera.main.transform.forward;
 				gameObject.transform.position = new Vector3(p.x, gameObject.transform.position.y, p.z);
+				command = true;
 			}
-			else
+			if (text.Contains("red"))
+			{
+				currentColors.Add(Color.red);
+				command = true;
+			}
+			if (text.Contains("orange"))
+			{
+				currentColors.Add(new Color(1, .65f, 0));
+				command = true;
+			}
+			if (text.Contains("green"))
+			{
+				currentColors.Add(Color.green);
+				command = true;
+			}
+			if (text.Contains("blue"))
+			{
+				currentColors.Add(Color.blue);
+				command = true;
+			}
+			if (text.Contains("purple"))
+			{
+				currentColors.Add(new Color(.5f, 0, .5f));
+				command = true;
+			}
+			if (text.Contains("pink") || text.Contains("magenta"))
+			{
+				currentColors.Add(Color.magenta);
+				command = true;
+			}
+			if (text.Contains("white"))
+			{
+				currentColors.Add(Color.white);
+				command = true;
+			}
+			if (text.Contains("grow") || text.Contains("big"))
+			{
+				targetScale = Vector3.one * .01f;
+			}
+			else if (text.Contains("shrink") || text.Contains("small"))
+			{
+				targetScale = Vector3.one * .001f;
+			}
+			if (!command)
 			{
 				StartCoroutine(GetToneAnalysis(text));
 			}
@@ -102,6 +151,14 @@ public class MicrophoneManager : MonoBehaviour
 		}
 		t = Time.time / interval % 1;
 		mat.color = Color.Lerp(currentColors[a], currentColors[b], t);
+
+		if (gameObject.transform.localScale.magnitude < targetScale.magnitude)
+		{
+			gameObject.transform.localScale *= 1.1f;
+		} else if (gameObject.transform.localScale.magnitude > targetScale.magnitude)
+		{
+			gameObject.transform.localScale *= .9f;
+		}
 	}
 
 	IEnumerator GetToneAnalysis(string text)
