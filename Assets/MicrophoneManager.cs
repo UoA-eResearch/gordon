@@ -10,6 +10,7 @@ public class MicrophoneManager : MonoBehaviour
 {
 
 	public Text debug;
+	public AudioSource audioSource;
 	private DictationRecognizer dictationRecognizer;
 	private Dictionary<string, Color> emotionColors;
 	private Material mat;
@@ -17,6 +18,7 @@ public class MicrophoneManager : MonoBehaviour
 	private List<Color> defaultColors;
 	private Vector3 targetScale;
 	private float interval = 2;
+	private AudioClip[] clips;
 
 	// Use this for initialization
 	void Start()
@@ -35,6 +37,10 @@ public class MicrophoneManager : MonoBehaviour
 			Color.gray
 		};
 		currentColors = defaultColors;
+
+		clips = Resources.LoadAll<AudioClip>("CasualGameSounds");
+
+		targetScale = Vector3.one * .01f;
 
 		mat = gameObject.GetComponentInChildren<Renderer>().material;
 
@@ -115,6 +121,12 @@ public class MicrophoneManager : MonoBehaviour
 			{
 				targetScale = Vector3.one * .001f;
 			}
+			if (text.Contains("gordon") || text.Contains("golden") || text.Contains("garden"))
+			{
+				var i = Random.Range(0, clips.Length);
+				audioSource.PlayOneShot(clips[i]);
+				Debug.Log("playing " + clips[i].name);
+			}
 			if (!command)
 			{
 				StartCoroutine(GetToneAnalysis(text));
@@ -151,14 +163,7 @@ public class MicrophoneManager : MonoBehaviour
 		}
 		t = Time.time / interval % 1;
 		mat.color = Color.Lerp(currentColors[a], currentColors[b], t);
-
-		if (gameObject.transform.localScale.magnitude < targetScale.magnitude)
-		{
-			gameObject.transform.localScale *= 1.1f;
-		} else if (gameObject.transform.localScale.magnitude > targetScale.magnitude)
-		{
-			gameObject.transform.localScale *= .9f;
-		}
+		gameObject.transform.localScale = Vector3.Lerp(gameObject.transform.localScale, targetScale, Time.deltaTime);
 	}
 
 	IEnumerator GetToneAnalysis(string text)
