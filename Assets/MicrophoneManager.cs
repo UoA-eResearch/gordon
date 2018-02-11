@@ -38,7 +38,7 @@ public class MicrophoneManager : MonoBehaviour
 		};
 		currentColors = defaultColors;
 
-		clips = Resources.LoadAll<AudioClip>("CasualGameSounds");
+		clips = Resources.LoadAll<AudioClip>("GordonSounds");
 
 		targetScale = Vector3.one * .01f;
 
