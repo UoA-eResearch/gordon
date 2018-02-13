@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.VR.WSA.Input;
 using UnityEngine.Windows.Speech;
 
 public class MicrophoneManager : MonoBehaviour
@@ -11,14 +12,22 @@ public class MicrophoneManager : MonoBehaviour
 
 	public Text debug;
 	public AudioSource audioSource;
+	public GameObject piece1;
+	public GameObject piece2;
 	private DictationRecognizer dictationRecognizer;
+	private GestureRecognizer manipulationRecognizer;
 	private Dictionary<string, Color> emotionColors;
-	private Material mat;
 	private List<Color> currentColors;
 	private List<Color> defaultColors;
 	private Vector3 targetScale;
 	private float interval = 2;
 	private AudioClip[] clips;
+	private bool emotion = true;
+	private bool duplicated = false;
+	private Dictionary<Transform, Vector3> clones;
+	private Vector3 manipulationPreviousPosition = Vector3.zero;
+	private Transform selectedObject;
+	private float startTime = 0f;
 
 	// Use this for initialization
 	void Start()
@@ -28,13 +37,12 @@ public class MicrophoneManager : MonoBehaviour
 			{"anger", Color.red},
 			{"disgust", Color.green},
 			{"fear", Color.magenta},
-			{"joy", new Color(1, .65f, 0)},
+			{"joy", new Color(1, .5f, 0)},
 			{"sadness", Color.blue}
 		};
 		defaultColors = new List<Color>()
 		{
-			Color.white,
-			Color.gray
+			Color.white
 		};
 		currentColors = defaultColors;
 
@@ -42,9 +50,7 @@ public class MicrophoneManager : MonoBehaviour
 
 		targetScale = Vector3.one * .01f;
 
-		mat = gameObject.GetComponentInChildren<Renderer>().material;
-
-		StartCoroutine(GetToneAnalysis("I'm happy"));
+		//StartCoroutine(GetToneAnalysis("I'm happy"));
 
 		dictationRecognizer = new DictationRecognizer(ConfidenceLevel.Rejected);
 		dictationRecognizer.AutoSilenceTimeoutSeconds = 5;
@@ -78,42 +84,44 @@ public class MicrophoneManager : MonoBehaviour
 				gameObject.transform.position = new Vector3(p.x, gameObject.transform.position.y, p.z);
 				command = true;
 			}
+			var tempColors = new List<Color>();
 			if (text.Contains("red"))
 			{
-				currentColors.Add(Color.red);
+				tempColors.Add(Color.red);
 				command = true;
 			}
 			if (text.Contains("orange"))
 			{
-				currentColors.Add(new Color(1, .65f, 0));
+				tempColors.Add(new Color(1, .5f, 0));
 				command = true;
 			}
 			if (text.Contains("green"))
 			{
-				currentColors.Add(Color.green);
+				tempColors.Add(Color.green);
 				command = true;
 			}
 			if (text.Contains("blue"))
 			{
-				currentColors.Add(Color.blue);
+				tempColors.Add(Color.blue);
 				command = true;
 			}
 			if (text.Contains("purple"))
 			{
-				currentColors.Add(new Color(.5f, 0, .5f));
+				tempColors.Add(new Color(.5f, 0, .5f));
 				command = true;
 			}
 			if (text.Contains("pink") || text.Contains("magenta"))
 			{
-				currentColors.Add(Color.magenta);
+				tempColors.Add(Color.magenta);
 				command = true;
 			}
 			if (text.Contains("white"))
 			{
-				currentColors.Add(Color.white);
+				tempColors.Add(Color.white);
 				command = true;
 			}
-			if (text.Contains("grow") || text.Contains("big"))
+			currentColors = tempColors;
+			if (text.Contains("grow") || text.Contains("big") || text.Contains("reset"))
 			{
 				targetScale = Vector3.one * .01f;
 			}
@@ -124,10 +132,58 @@ public class MicrophoneManager : MonoBehaviour
 			if (text.Contains("gordon") || text.Contains("golden") || text.Contains("garden"))
 			{
 				var i = Random.Range(0, clips.Length);
-				audioSource.PlayOneShot(clips[i]);
+				audioSource.clip = clips[i];
+				audioSource.Play();
 				Debug.Log("playing " + clips[i].name);
 			}
-			if (!command)
+			if (text.Contains("emotion on"))
+			{
+				emotion = true;
+			}
+			else if (text.Contains("emotion off"))
+			{
+				emotion = false;
+			}
+			if (text.Contains("duplicate") && !duplicated)
+			{
+				var prefab = transform.GetChild(0);
+				clones = new Dictionary<Transform, Vector3>();
+				for (var i = 1; i < 4; i++)
+				{
+					var clone = Instantiate(prefab, transform);
+					var dir = clone.transform.position - Camera.main.transform.position;
+					dir = Quaternion.Euler(0, i * 90, 0) * dir;
+					var targetPos = Camera.main.transform.position + dir;
+					clones.Add(clone, targetPos);
+				}
+				duplicated = true;
+				startTime = Time.time;
+			}
+			else if (text.Contains("single") || text.Contains("reset") && duplicated)
+			{
+				foreach (var clone in clones)
+				{
+					Destroy(clone.Key.gameObject);
+				}
+				duplicated = false;
+			}
+			if (text.Contains("extend"))
+			{
+				piece1.SetActive(true);
+				piece2.SetActive(true);
+				manipulationRecognizer.StartCapturingGestures();
+			}
+			else if (text.Contains("remove"))
+			{
+				piece1.SetActive(false);
+				piece2.SetActive(false);
+				manipulationRecognizer.StopCapturingGestures();
+			}
+			if (text.Contains("reset"))
+			{
+				currentColors = defaultColors;
+			}
+			if (!command && emotion)
 			{
 				StartCoroutine(GetToneAnalysis(text));
 			}
@@ -149,20 +205,82 @@ public class MicrophoneManager : MonoBehaviour
 		};
 
 		dictationRecognizer.Start();
+
+		manipulationRecognizer = new GestureRecognizer();
+		manipulationRecognizer.SetRecognizableGestures(GestureSettings.ManipulationTranslate);
+		manipulationRecognizer.ManipulationUpdatedEvent += ManipulationRecognizer_ManipulationUpdatedEvent;
+		manipulationRecognizer.ManipulationCompletedEvent += ManipulationRecognizer_ManipulationCompletedEvent;
+		manipulationRecognizer.ManipulationCanceledEvent += ManipulationRecognizer_ManipulationCompletedEvent;
+
+	}
+
+	private void ManipulationRecognizer_ManipulationCompletedEvent(InteractionSourceKind source, Vector3 cumulativeDelta, Ray headRay)
+	{
+		manipulationPreviousPosition = Vector3.zero;
+		selectedObject = null;
+	}
+
+	private void ManipulationRecognizer_ManipulationUpdatedEvent(InteractionSourceKind source, Vector3 cumulativeDelta, Ray headRay)
+	{
+		if (!selectedObject)
+		{
+			var minDist = float.PositiveInfinity;
+			selectedObject = transform;
+			foreach (Transform child in transform)
+			{
+				float distance = Vector3.Cross(headRay.direction, child.position - headRay.origin).magnitude;
+				if (distance < minDist)
+				{
+					minDist = distance;
+					selectedObject = child;
+				}
+			}
+			Debug.Log("ray was closest to " + selectedObject.name + " with dist " + minDist);
+		}
+
+		var moveVector = cumulativeDelta - manipulationPreviousPosition;
+		manipulationPreviousPosition = cumulativeDelta;
+		selectedObject.position += moveVector;
 	}
 
 	// Update is called once per frame
 	void Update()
 	{
-		var t = Time.time / interval % currentColors.Count;
-		int a = (int)t;
-		int b = a + 1;
-		if (b >= currentColors.Count)
+		if (audioSource.isPlaying)
 		{
-			b = 0;
+			if (currentColors.Count == 1)
+			{
+				currentColors.Add(Color.gray);
+			}
+			interval = .5f;
 		}
-		t = Time.time / interval % 1;
-		mat.color = Color.Lerp(currentColors[a], currentColors[b], t);
+		else
+		{
+			currentColors.Remove(Color.gray);
+			interval = 2;
+		}
+
+		if (duplicated)
+		{
+			foreach (var clone in clones)
+			{
+				clone.Key.position = Vector3.Lerp(clone.Key.position, clone.Value, (Time.time - startTime) / 20);
+			}
+		}
+
+
+		if (currentColors.Count > 0)
+		{
+			var t = Time.time / interval % currentColors.Count;
+			int index = (int)t;
+			var targetColor = currentColors[index];
+
+			var rends = gameObject.GetComponentsInChildren<Renderer>();
+			foreach (var r in rends)
+			{
+				r.material.color = Color.Lerp(r.material.color, targetColor, Time.time / interval % 1);
+			}
+		}
 		gameObject.transform.localScale = Vector3.Lerp(gameObject.transform.localScale, targetScale, Time.deltaTime);
 	}
 
@@ -187,7 +305,7 @@ public class MicrophoneManager : MonoBehaviour
 		}
 		else if (tones.Count() == 1)
 		{
-			currentColors.Add(Color.white);
+			//currentColors.Add(Color.white);
 		}
 	}
 }
