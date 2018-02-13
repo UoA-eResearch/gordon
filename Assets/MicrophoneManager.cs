@@ -124,10 +124,12 @@ public class MicrophoneManager : MonoBehaviour
 			if (text.Contains("grow") || text.Contains("big") || text.Contains("reset"))
 			{
 				targetScale = Vector3.one * .01f;
+				command = true;
 			}
 			else if (text.Contains("shrink") || text.Contains("small"))
 			{
 				targetScale = Vector3.one * .001f;
+				command = true;
 			}
 			if (text.Contains("gordon") || text.Contains("golden") || text.Contains("garden"))
 			{
@@ -139,10 +141,12 @@ public class MicrophoneManager : MonoBehaviour
 			if (text.Contains("emotion on"))
 			{
 				emotion = true;
+				command = true;
 			}
 			else if (text.Contains("emotion off"))
 			{
 				emotion = false;
+				command = true;
 			}
 			if (text.Contains("duplicate") && !duplicated)
 			{
@@ -158,30 +162,35 @@ public class MicrophoneManager : MonoBehaviour
 				}
 				duplicated = true;
 				startTime = Time.time;
+				command = true;
 			}
-			else if (text.Contains("single") || text.Contains("reset") && duplicated)
+			else if ((text.Contains("single") || text.Contains("reset")) && duplicated)
 			{
 				foreach (var clone in clones)
 				{
 					Destroy(clone.Key.gameObject);
 				}
 				duplicated = false;
+				command = true;
 			}
 			if (text.Contains("extend"))
 			{
 				piece1.SetActive(true);
 				piece2.SetActive(true);
 				manipulationRecognizer.StartCapturingGestures();
+				command = true;
 			}
-			else if (text.Contains("remove"))
+			else if (text.Contains("remove") || text.Contains("reset"))
 			{
 				piece1.SetActive(false);
 				piece2.SetActive(false);
 				manipulationRecognizer.StopCapturingGestures();
+				command = true;
 			}
 			if (text.Contains("reset"))
 			{
 				currentColors = defaultColors;
+				command = true;
 			}
 			if (!command && emotion)
 			{
