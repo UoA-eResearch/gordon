@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.VR.WSA.Input;
@@ -233,18 +234,30 @@ public class MicrophoneManager : MonoBehaviour
 	{
 		if (!selectedObject)
 		{
-			var minDist = float.PositiveInfinity;
-			selectedObject = transform;
-			foreach (Transform child in transform)
+			GetComponent<LineRenderer>().SetPosition(0, headRay.origin);
+			GetComponent<LineRenderer>().SetPosition(1, headRay.origin + headRay.direction * 2);
+			RaycastHit hit;
+			if (Physics.Raycast(headRay, out hit))
 			{
-				float distance = Vector3.Cross(headRay.direction, child.position - headRay.origin).magnitude;
-				if (distance < minDist)
-				{
-					minDist = distance;
-					selectedObject = child;
-				}
+				selectedObject = hit.collider.transform;
+				Debug.Log("hit " + hit.collider.name);
 			}
-			Debug.Log("ray was closest to " + selectedObject.name + " with dist " + minDist);
+			else
+			{
+				var minDist = float.PositiveInfinity;
+				selectedObject = transform;
+				foreach (Transform child in transform)
+				{
+					float distance = HandleUtility.DistancePointLine(child.position, headRay.origin, headRay.origin + headRay.direction * 2);
+					Debug.Log("distance from ray to " + child.name + " = " + distance);
+					if (distance < minDist)
+					{
+						minDist = distance;
+						selectedObject = child;
+					}
+				}
+				Debug.Log("ray was closest to " + selectedObject.name + " with dist " + minDist);
+			}
 		}
 
 		var moveVector = cumulativeDelta - manipulationPreviousPosition;

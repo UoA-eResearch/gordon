@@ -17,6 +17,8 @@ ModelImporter:
     3300002: ID11
     4300000: SketchUp
     4300002: ID11
+    6400000: //RootNode
+    6400002: ID11
     9500000: //RootNode
   materials:
     importMaterials: 1
