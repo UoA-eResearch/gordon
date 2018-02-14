@@ -247,7 +247,7 @@ public class MicrophoneManager : MonoBehaviour
 				selectedObject = transform;
 				foreach (Transform child in transform)
 				{
-					float distance = HandleUtility.DistancePointLine(child.position, headRay.origin, headRay.origin + headRay.direction * 2);
+					float distance = Vector3.Cross(headRay.direction, child.position - headRay.origin).magnitude;
 					Debug.Log("distance from ray to " + child.name + " = " + distance);
 					if (distance < minDist)
 					{
