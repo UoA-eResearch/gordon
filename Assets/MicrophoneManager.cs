@@ -28,10 +28,12 @@ public class MicrophoneManager : MonoBehaviour
 	private Vector3 manipulationPreviousPosition = Vector3.zero;
 	private Transform selectedObject;
 	private float startTime = 0f;
+	private Multiplayer multiplayer;
 
 	// Use this for initialization
 	void Start()
 	{
+		multiplayer = gameObject.GetComponent<Multiplayer>();
 		emotionColors = new Dictionary<string, Color>()
 		{
 			{"anger", Color.red},
@@ -64,138 +66,8 @@ public class MicrophoneManager : MonoBehaviour
 
 		dictationRecognizer.DictationResult += (text, confidence) =>
 		{
-			var outText = "result: " + text;
-			Debug.Log(outText);
-			debug.text = outText;
-			bool command = false;
-			if (text.Contains("debug off") || text.Contains("the bug off"))
-			{
-				debug.gameObject.SetActive(false);
-				command = true;
-			}
-			else if (text.Contains("debug on") || text.Contains("the bug on"))
-			{
-				debug.gameObject.SetActive(true);
-				command = true;
-			}
-			if (text.Contains("come here"))
-			{
-				var p = Camera.main.transform.position + Camera.main.transform.forward;
-				gameObject.transform.position = new Vector3(p.x, gameObject.transform.position.y, p.z);
-				command = true;
-			}
-			var tempColors = new List<Color>();
-			if (text.Contains("red"))
-			{
-				tempColors.Add(Color.red);
-				command = true;
-			}
-			if (text.Contains("orange"))
-			{
-				tempColors.Add(new Color(1, .5f, 0));
-				command = true;
-			}
-			if (text.Contains("green"))
-			{
-				tempColors.Add(Color.green);
-				command = true;
-			}
-			if (text.Contains("blue"))
-			{
-				tempColors.Add(Color.blue);
-				command = true;
-			}
-			if (text.Contains("purple"))
-			{
-				tempColors.Add(new Color(.5f, 0, .5f));
-				command = true;
-			}
-			if (text.Contains("pink") || text.Contains("magenta"))
-			{
-				tempColors.Add(Color.magenta);
-				command = true;
-			}
-			if (text.Contains("white"))
-			{
-				tempColors.Add(Color.white);
-				command = true;
-			}
-			currentColors = tempColors;
-			if (text.Contains("grow") || text.Contains("big") || text.Contains("reset"))
-			{
-				targetScale = Vector3.one * .01f;
-				command = true;
-			}
-			else if (text.Contains("shrink") || text.Contains("small"))
-			{
-				targetScale = Vector3.one * .001f;
-				command = true;
-			}
-			if (text.Contains("gordon") || text.Contains("golden") || text.Contains("garden"))
-			{
-				var i = Random.Range(0, clips.Length);
-				audioSource.clip = clips[i];
-				audioSource.Play();
-				Debug.Log("playing " + clips[i].name);
-			}
-			if (text.Contains("emotion on"))
-			{
-				emotion = true;
-				command = true;
-			}
-			else if (text.Contains("emotion off"))
-			{
-				emotion = false;
-				command = true;
-			}
-			if (text.Contains("duplicate") && !duplicated)
-			{
-				var prefab = transform.GetChild(0);
-				clones = new Dictionary<Transform, Vector3>();
-				for (var i = 1; i < 4; i++)
-				{
-					var clone = Instantiate(prefab, transform);
-					var dir = clone.transform.position - Camera.main.transform.position;
-					dir = Quaternion.Euler(0, i * 90, 0) * dir;
-					var targetPos = Camera.main.transform.position + dir;
-					clones.Add(clone, targetPos);
-				}
-				duplicated = true;
-				startTime = Time.time;
-				command = true;
-			}
-			else if ((text.Contains("single") || text.Contains("reset")) && duplicated)
-			{
-				foreach (var clone in clones)
-				{
-					Destroy(clone.Key.gameObject);
-				}
-				duplicated = false;
-				command = true;
-			}
-			if (text.Contains("extend"))
-			{
-				piece1.SetActive(true);
-				piece2.SetActive(true);
-				manipulationRecognizer.StartCapturingGestures();
-				command = true;
-			}
-			else if (text.Contains("remove") || text.Contains("reset"))
-			{
-				piece1.SetActive(false);
-				piece2.SetActive(false);
-				manipulationRecognizer.StopCapturingGestures();
-				command = true;
-			}
-			if (text.Contains("reset"))
-			{
-				currentColors = defaultColors;
-				command = true;
-			}
-			if (!command && emotion)
-			{
-				StartCoroutine(GetToneAnalysis(text));
-			}
+			HandleSpeech(text);
+			multiplayer.BroadcastSpeech(text);
 		};
 
 		dictationRecognizer.DictationComplete += (completionCause) =>
@@ -221,6 +93,143 @@ public class MicrophoneManager : MonoBehaviour
 		manipulationRecognizer.ManipulationCompletedEvent += ManipulationRecognizer_ManipulationCompletedEvent;
 		manipulationRecognizer.ManipulationCanceledEvent += ManipulationRecognizer_ManipulationCompletedEvent;
 
+	}
+
+	public void HandleSpeech(string text)
+	{
+
+		var outText = "result: " + text;
+		Debug.Log(outText);
+		debug.text = outText;
+		bool command = false;
+		if (text.Contains("debug off") || text.Contains("the bug off"))
+		{
+			debug.gameObject.SetActive(false);
+			command = true;
+		}
+		else if (text.Contains("debug on") || text.Contains("the bug on"))
+		{
+			debug.gameObject.SetActive(true);
+			command = true;
+		}
+		if (text.Contains("come here"))
+		{
+			var p = Camera.main.transform.position + Camera.main.transform.forward;
+			gameObject.transform.position = new Vector3(p.x, gameObject.transform.position.y, p.z);
+			command = true;
+		}
+		var tempColors = new List<Color>();
+		if (text.Contains("red"))
+		{
+			tempColors.Add(Color.red);
+			command = true;
+		}
+		if (text.Contains("orange"))
+		{
+			tempColors.Add(new Color(1, .5f, 0));
+			command = true;
+		}
+		if (text.Contains("green"))
+		{
+			tempColors.Add(Color.green);
+			command = true;
+		}
+		if (text.Contains("blue"))
+		{
+			tempColors.Add(Color.blue);
+			command = true;
+		}
+		if (text.Contains("purple"))
+		{
+			tempColors.Add(new Color(.5f, 0, .5f));
+			command = true;
+		}
+		if (text.Contains("pink") || text.Contains("magenta"))
+		{
+			tempColors.Add(Color.magenta);
+			command = true;
+		}
+		if (text.Contains("white"))
+		{
+			tempColors.Add(Color.white);
+			command = true;
+		}
+		currentColors = tempColors;
+		if (text.Contains("grow") || text.Contains("big") || text.Contains("reset"))
+		{
+			targetScale = Vector3.one * .01f;
+			command = true;
+		}
+		else if (text.Contains("shrink") || text.Contains("small"))
+		{
+			targetScale = Vector3.one * .001f;
+			command = true;
+		}
+		if (text.Contains("gordon") || text.Contains("golden") || text.Contains("garden"))
+		{
+			var i = Random.Range(0, clips.Length);
+			audioSource.clip = clips[i];
+			audioSource.Play();
+			Debug.Log("playing " + clips[i].name);
+		}
+		if (text.Contains("emotion on"))
+		{
+			emotion = true;
+			command = true;
+		}
+		else if (text.Contains("emotion off"))
+		{
+			emotion = false;
+			command = true;
+		}
+		if (text.Contains("duplicate") && !duplicated)
+		{
+			var prefab = transform.GetChild(0);
+			clones = new Dictionary<Transform, Vector3>();
+			for (var i = 1; i < 4; i++)
+			{
+				var clone = Instantiate(prefab, transform);
+				var dir = clone.transform.position - Camera.main.transform.position;
+				dir = Quaternion.Euler(0, i * 90, 0) * dir;
+				var targetPos = Camera.main.transform.position + dir;
+				clones.Add(clone, targetPos);
+			}
+			duplicated = true;
+			startTime = Time.time;
+			command = true;
+		}
+		else if ((text.Contains("single") || text.Contains("reset")) && duplicated)
+		{
+			foreach (var clone in clones)
+			{
+				Destroy(clone.Key.gameObject);
+			}
+			duplicated = false;
+			command = true;
+		}
+		if (text.Contains("extend"))
+		{
+			piece1.SetActive(true);
+			piece2.SetActive(true);
+			manipulationRecognizer.StartCapturingGestures();
+			command = true;
+		}
+		else if (text.Contains("remove") || text.Contains("reset"))
+		{
+			piece1.SetActive(false);
+			piece2.SetActive(false);
+			manipulationRecognizer.StopCapturingGestures();
+			command = true;
+		}
+		if (text.Contains("reset"))
+		{
+			currentColors = defaultColors;
+			command = true;
+		}
+		if (!command && emotion)
+		{
+			StartCoroutine(GetToneAnalysis(text));
+		}
 	}
 
 	private void ManipulationRecognizer_ManipulationCompletedEvent(InteractionSourceKind source, Vector3 cumulativeDelta, Ray headRay)
