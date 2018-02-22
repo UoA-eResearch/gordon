@@ -16,6 +16,8 @@ public class Multiplayer : MonoBehaviour {
 	private MicrophoneManager micMan;
 	string deviceId;
 	public bool ignoreSelf = true;
+	public bool recieve = true;
+	public bool send = true;
 	
 	// Use this for initialization
 	void Start ()
@@ -43,11 +45,15 @@ public class Multiplayer : MonoBehaviour {
 
 	public void BroadcastSpeech(string text)
 	{
-		byte error;
-		byte[] bytes = Encoding.ASCII.GetBytes(text);
-		foreach (var player in otherPlayerConnections) {
-			NetworkTransport.Send(hostId, player.Key, reliable, bytes, bytes.Length, out error);
-			Debug.Log("Sent " + text + " to conId:" + player.Key + ":" + player.Value);
+		if (send)
+		{
+			byte error;
+			byte[] bytes = Encoding.ASCII.GetBytes(text);
+			foreach (var player in otherPlayerConnections)
+			{
+				NetworkTransport.Send(hostId, player.Key, reliable, bytes, bytes.Length, out error);
+				Debug.Log("Sent " + text + " to conId:" + player.Key + ":" + player.Value);
+			}
 		}
 	}
 	
@@ -70,7 +76,10 @@ public class Multiplayer : MonoBehaviour {
 			case NetworkEventType.DataEvent:       //3
 				string data = Encoding.ASCII.GetString(recBuffer);
 				Debug.Log("Got data: " + data + " on conId " + connectionId);
-				micMan.HandleSpeech(data);
+				if (recieve)
+				{
+					micMan.HandleSpeech(data);
+				}
 				break;
 			case NetworkEventType.DisconnectEvent: //4
 				Debug.Log("Disconnect: " + (NetworkError)error + " on conId " + connectionId);

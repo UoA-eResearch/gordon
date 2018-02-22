@@ -28,6 +28,7 @@ public class MicrophoneManager : MonoBehaviour
 	private Vector3 manipulationPreviousPosition = Vector3.zero;
 	private Transform selectedObject;
 	private float startTime = 0f;
+	private float colorChangeTime = 0f;
 	private Multiplayer multiplayer;
 
 	// Use this for initialization
@@ -92,6 +93,7 @@ public class MicrophoneManager : MonoBehaviour
 		manipulationRecognizer.ManipulationUpdatedEvent += ManipulationRecognizer_ManipulationUpdatedEvent;
 		manipulationRecognizer.ManipulationCompletedEvent += ManipulationRecognizer_ManipulationCompletedEvent;
 		manipulationRecognizer.ManipulationCanceledEvent += ManipulationRecognizer_ManipulationCompletedEvent;
+		//manipulationRecognizer.StartCapturingGestures();
 
 	}
 
@@ -154,13 +156,17 @@ public class MicrophoneManager : MonoBehaviour
 			tempColors.Add(Color.white);
 			command = true;
 		}
+		if (currentColors != tempColors)
+		{
+			colorChangeTime = Time.time;
+		}
 		currentColors = tempColors;
 		if (text.Contains("grow") || text.Contains("big") || text.Contains("reset"))
 		{
 			targetScale = Vector3.one * .01f;
 			command = true;
 		}
-		else if (text.Contains("shrink") || text.Contains("small"))
+		else if (text.Contains("shrink") || text.Contains("small") || text.Contains("smoke"))
 		{
 			targetScale = Vector3.one * .001f;
 			command = true;
@@ -182,7 +188,7 @@ public class MicrophoneManager : MonoBehaviour
 			emotion = false;
 			command = true;
 		}
-		if (text.Contains("duplicate") && !duplicated)
+		if ((text.Contains("duplicate") || text.Contains("copy")) && !duplicated)
 		{
 			var prefab = transform.GetChild(0);
 			clones = new Dictionary<Transform, Vector3>();
@@ -221,6 +227,38 @@ public class MicrophoneManager : MonoBehaviour
 			manipulationRecognizer.StopCapturingGestures();
 			command = true;
 		}
+		if (text.Contains("send off"))
+		{
+			multiplayer.send = false;
+			command = true;
+		}
+		else if (text.Contains("send on"))
+		{
+			multiplayer.send = true;
+			command = true;
+		}
+		if (text.Contains("recieve off"))
+		{
+			multiplayer.recieve = false;
+			command = true;
+		}
+		else if (text.Contains("recieve on"))
+		{
+			multiplayer.recieve = true;
+			command = true;
+		}
+		if (text.Contains("multiplayer off"))
+		{
+			multiplayer.send = false;
+			multiplayer.recieve = false;
+			command = true;
+		}
+		else if (text.Contains("multiplayer on"))
+		{
+			multiplayer.send = true;
+			multiplayer.recieve = true;
+			command = true;
+		}
 		if (text.Contains("reset"))
 		{
 			currentColors = defaultColors;
@@ -247,8 +285,13 @@ public class MicrophoneManager : MonoBehaviour
 			RaycastHit hit;
 			if (Physics.Raycast(headRay, out hit))
 			{
-				selectedObject = hit.collider.transform;
-				Debug.Log("hit " + hit.collider.name);
+				var go = hit.collider.transform;
+				if (!hit.collider.name.Contains("piece") && hit.collider.name != "default")
+				{
+					go = go.parent;
+				}
+				selectedObject = go;
+				Debug.Log("hit " + go.name);
 			}
 			else
 			{
@@ -301,14 +344,14 @@ public class MicrophoneManager : MonoBehaviour
 
 		if (currentColors.Count > 0)
 		{
-			var t = Time.time / interval % currentColors.Count;
+			var t = (Time.time - colorChangeTime) / interval % currentColors.Count;
 			int index = (int)t;
 			var targetColor = currentColors[index];
 
 			var rends = gameObject.GetComponentsInChildren<Renderer>();
 			foreach (var r in rends)
 			{
-				r.material.color = Color.Lerp(r.material.color, targetColor, Time.time / interval % 1);
+				r.material.SetColor("_Diffusecolor", Color.Lerp(r.material.GetColor("_Diffusecolor"), targetColor, t % 1));
 			}
 		}
 		gameObject.transform.localScale = Vector3.Lerp(gameObject.transform.localScale, targetScale, Time.deltaTime);
@@ -329,6 +372,7 @@ public class MicrophoneManager : MonoBehaviour
 		var json = new JSONObject(responseString);
 		var tones = json["document_tone"]["tones"].list;
 		currentColors = tones.Where(x => emotionColors.ContainsKey(x["tone_id"].str)).Select(x => emotionColors[x["tone_id"].str]).ToList();
+		colorChangeTime = Time.time;
 		if (tones.Count() == 0)
 		{
 			currentColors = defaultColors;
