@@ -13,6 +13,7 @@ public class MicrophoneManager : MonoBehaviour
 	public Text debug;
 	public AudioSource audioSource;
 	public GameObject clonePrefab;
+	public GameObject gordonDefault;
 	public GameObject piece1;
 	public GameObject piece2;
 	private DictationRecognizer dictationRecognizer;
@@ -196,6 +197,7 @@ public class MicrophoneManager : MonoBehaviour
 			for (var i = 1; i < 4; i++)
 			{
 				var clone = Instantiate(clonePrefab, transform);
+				clone.transform.position = gordonDefault.transform.position;
 				var clonePiece1 = clone.transform.Find("Gordon piece 1");
 				var clonePiece2 = clone.transform.Find("Gordon piece 2");
 				clonePiece1.gameObject.SetActive(piece1.activeInHierarchy);
@@ -215,7 +217,7 @@ public class MicrophoneManager : MonoBehaviour
 		{
 			foreach (var clone in clones.Keys.ToList())
 			{
-				clones[clone] = transform.position;
+				clones[clone] = gordonDefault.transform.position;
 			}
 			startTime = Time.time;
 			command = true;
@@ -309,7 +311,7 @@ public class MicrophoneManager : MonoBehaviour
 			if (Physics.Raycast(headRay, out hit))
 			{
 				var go = hit.collider.transform;
-				if (!hit.collider.name.Contains("piece") && hit.collider.name != "default")
+				if (!hit.collider.name.Contains("piece") && hit.collider.name != "defaultOffset")
 				{
 					go = go.parent;
 				}
@@ -380,7 +382,7 @@ public class MicrophoneManager : MonoBehaviour
 				if (clone.Key)
 				{
 					clone.Key.position = Vector3.Lerp(clone.Key.position, clone.Value, (Time.time - startTime) / 20);
-					if (clone.Value == transform.position && (clone.Key.position - transform.position).magnitude < .001f)
+					if (clone.Value == gordonDefault.transform.position && clone.Key.position == gordonDefault.transform.position)
 					{
 						Destroy(clone.Key.gameObject);
 					}
