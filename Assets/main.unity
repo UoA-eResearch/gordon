@@ -615,6 +615,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   debug: {fileID: 291170757}
   audioSource: {fileID: 998609612}
+  clonePrefab: {fileID: 1484729203539712, guid: 13e92cd2561f242488666da16091b0b7,
+    type: 2}
   piece1: {fileID: 1009523556}
   piece2: {fileID: 1743662774}
 --- !u!82 &998609612

@@ -12,6 +12,7 @@ public class MicrophoneManager : MonoBehaviour
 
 	public Text debug;
 	public AudioSource audioSource;
+	public GameObject clonePrefab;
 	public GameObject piece1;
 	public GameObject piece2;
 	private DictationRecognizer dictationRecognizer;
@@ -54,6 +55,7 @@ public class MicrophoneManager : MonoBehaviour
 		targetScale = Vector3.one * .01f;
 
 		//StartCoroutine(GetToneAnalysis("I'm happy"));
+		//HandleSpeech("extend and duplicate");
 
 		dictationRecognizer = new DictationRecognizer(ConfidenceLevel.Rejected);
 		dictationRecognizer.AutoSilenceTimeoutSeconds = 5;
@@ -188,17 +190,22 @@ public class MicrophoneManager : MonoBehaviour
 			emotion = false;
 			command = true;
 		}
-		if ((text.Contains("duplicate") || text.Contains("copy")) && !duplicated)
+		if ((text.Contains("duplicate") || text.Contains("copy") || text.Contains("coffee")) && !duplicated)
 		{
-			var prefab = transform.GetChild(0);
 			clones = new Dictionary<Transform, Vector3>();
 			for (var i = 1; i < 4; i++)
 			{
-				var clone = Instantiate(prefab, transform);
+				var clone = Instantiate(clonePrefab, transform);
+				var clonePiece1 = clone.transform.Find("Gordon piece 1");
+				var clonePiece2 = clone.transform.Find("Gordon piece 2");
+				clonePiece1.gameObject.SetActive(piece1.activeInHierarchy);
+				clonePiece2.gameObject.SetActive(piece2.activeInHierarchy);
+				clonePiece1.localPosition = piece1.transform.localPosition;
+				clonePiece2.localPosition = piece2.transform.localPosition;
 				var dir = clone.transform.position - Camera.main.transform.position;
 				dir = Quaternion.Euler(0, i * 90, 0) * dir;
 				var targetPos = Camera.main.transform.position + dir;
-				clones.Add(clone, targetPos);
+				clones.Add(clone.transform, targetPos);
 			}
 			duplicated = true;
 			startTime = Time.time;
@@ -206,17 +213,25 @@ public class MicrophoneManager : MonoBehaviour
 		}
 		else if ((text.Contains("single") || text.Contains("reset")) && duplicated)
 		{
-			foreach (var clone in clones)
+			foreach (var clone in clones.Keys.ToList())
 			{
-				Destroy(clone.Key.gameObject);
+				clones[clone] = transform.position;
 			}
-			duplicated = false;
+			startTime = Time.time;
 			command = true;
 		}
-		if (text.Contains("extend"))
+		if (text.Contains("extend") || text.Contains("extent"))
 		{
 			piece1.SetActive(true);
 			piece2.SetActive(true);
+			if (duplicated)
+			{
+				foreach (var clone in clones)
+				{
+					clone.Key.Find("Gordon piece 1").gameObject.SetActive(true);
+					clone.Key.Find("Gordon piece 2").gameObject.SetActive(true);
+				}
+			}
 			manipulationRecognizer.StartCapturingGestures();
 			command = true;
 		}
@@ -224,6 +239,14 @@ public class MicrophoneManager : MonoBehaviour
 		{
 			piece1.SetActive(false);
 			piece2.SetActive(false);
+			if (duplicated)
+			{
+				foreach (var clone in clones)
+				{
+					clone.Key.Find("Gordon piece 1").gameObject.SetActive(false);
+					clone.Key.Find("Gordon piece 2").gameObject.SetActive(false);
+				}
+			}
 			manipulationRecognizer.StopCapturingGestures();
 			command = true;
 		}
@@ -299,12 +322,28 @@ public class MicrophoneManager : MonoBehaviour
 				selectedObject = transform;
 				foreach (Transform child in transform)
 				{
-					float distance = Vector3.Cross(headRay.direction, child.position - headRay.origin).magnitude;
-					Debug.Log("distance from ray to " + child.name + " = " + distance);
-					if (distance < minDist)
+					if (child.name.Contains("Clone"))
 					{
-						minDist = distance;
-						selectedObject = child;
+						foreach (Transform grandChild in child)
+						{
+							float distance = Vector3.Cross(headRay.direction, grandChild.position - headRay.origin).magnitude;
+							Debug.Log("distance from ray to " + grandChild.name + " = " + distance);
+							if (distance < minDist)
+							{
+								minDist = distance;
+								selectedObject = grandChild;
+							}
+						}
+					}
+					else
+					{
+						float distance = Vector3.Cross(headRay.direction, child.position - headRay.origin).magnitude;
+						Debug.Log("distance from ray to " + child.name + " = " + distance);
+						if (distance < minDist)
+						{
+							minDist = distance;
+							selectedObject = child;
+						}
 					}
 				}
 				Debug.Log("ray was closest to " + selectedObject.name + " with dist " + minDist);
@@ -335,9 +374,25 @@ public class MicrophoneManager : MonoBehaviour
 
 		if (duplicated)
 		{
+			bool allDone = true;
 			foreach (var clone in clones)
 			{
-				clone.Key.position = Vector3.Lerp(clone.Key.position, clone.Value, (Time.time - startTime) / 20);
+				if (clone.Key)
+				{
+					clone.Key.position = Vector3.Lerp(clone.Key.position, clone.Value, (Time.time - startTime) / 20);
+					if (clone.Value == transform.position && (clone.Key.position - transform.position).magnitude < .001f)
+					{
+						Destroy(clone.Key.gameObject);
+					}
+					else
+					{
+						allDone = false;
+					}
+				}
+			}
+			if (allDone)
+			{
+				duplicated = false;
 			}
 		}
 
