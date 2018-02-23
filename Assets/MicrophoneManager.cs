@@ -158,11 +158,11 @@ public class MicrophoneManager : MonoBehaviour
 			tempColors.Add(Color.white);
 			command = true;
 		}
-		if (currentColors != tempColors)
+		if (tempColors.Count > 0)
 		{
 			colorChangeTime = Time.time;
+			currentColors = tempColors;
 		}
-		currentColors = tempColors;
 		if (text.Contains("grow") || text.Contains("big") || text.Contains("reset"))
 		{
 			targetScale = Vector3.one * .01f;
