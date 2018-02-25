@@ -60,7 +60,7 @@ public class MicrophoneManager : MonoBehaviour
 		//HandleSpeech("extend and duplicate");
 
 		dictationRecognizer = new DictationRecognizer(ConfidenceLevel.Rejected);
-		dictationRecognizer.AutoSilenceTimeoutSeconds = 5;
+		dictationRecognizer.AutoSilenceTimeoutSeconds = 1;
 
 		dictationRecognizer.DictationHypothesis += (text) =>
 		{
@@ -91,7 +91,6 @@ public class MicrophoneManager : MonoBehaviour
 		};
 
 		dictationRecognizer.Start();
-		InvokeRepeating("CheckDictation", 5, 1);
 
 		manipulationRecognizer = new GestureRecognizer();
 		manipulationRecognizer.SetRecognizableGestures(GestureSettings.ManipulationTranslate);
@@ -100,14 +99,6 @@ public class MicrophoneManager : MonoBehaviour
 		manipulationRecognizer.ManipulationCanceledEvent += ManipulationRecognizer_ManipulationCompletedEvent;
 		//manipulationRecognizer.StartCapturingGestures();
 
-	}
-
-	void CheckDictation()
-	{
-		if (dictationRecognizer.Status != SpeechSystemStatus.Running)
-		{
-			dictationRecognizer.Start();
-		}
 	}
 
 	public void HandleSpeech(string text)
