@@ -60,7 +60,7 @@ public class MicrophoneManager : MonoBehaviour
 		//HandleSpeech("extend and duplicate");
 
 		dictationRecognizer = new DictationRecognizer(ConfidenceLevel.Rejected);
-		dictationRecognizer.AutoSilenceTimeoutSeconds = 1;
+		dictationRecognizer.AutoSilenceTimeoutSeconds = 2;
 
 		dictationRecognizer.DictationHypothesis += (text) =>
 		{
