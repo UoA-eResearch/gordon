@@ -91,7 +91,7 @@ public class MicrophoneManager : MonoBehaviour
 		};
 
 		dictationRecognizer.Start();
-		InvokeRepeating("CheckDictation", 0, 1);
+		InvokeRepeating("CheckDictation", 5, 1);
 
 		manipulationRecognizer = new GestureRecognizer();
 		manipulationRecognizer.SetRecognizableGestures(GestureSettings.ManipulationTranslate);
@@ -242,7 +242,10 @@ public class MicrophoneManager : MonoBehaviour
 					clone.Key.Find("Gordon piece 2").gameObject.SetActive(true);
 				}
 			}
-			manipulationRecognizer.StartCapturingGestures();
+			if (manipulationRecognizer != null)
+			{
+				manipulationRecognizer.StartCapturingGestures();
+			}
 			command = true;
 		}
 		else if (text.Contains("remove") || text.Contains("reset"))
@@ -407,7 +410,7 @@ public class MicrophoneManager : MonoBehaviour
 					}
 				}
 			}
-			if (allDone)
+			if (!isDuplicating && allDone)
 			{
 				duplicated = false;
 			}
