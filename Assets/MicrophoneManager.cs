@@ -24,7 +24,7 @@ public class MicrophoneManager : MonoBehaviour
 	private Vector3 targetScale;
 	private float interval = 2;
 	private AudioClip[] clips;
-	private bool emotion = true;
+	private bool emotion = false;
 	private bool duplicated = false;
 	private Dictionary<Transform, Vector3> clones;
 	private Vector3 manipulationPreviousPosition = Vector3.zero;
@@ -118,7 +118,7 @@ public class MicrophoneManager : MonoBehaviour
 			debug.gameObject.SetActive(true);
 			command = true;
 		}
-		if (text.Contains("come here"))
+		if (text.Contains("come here") || text.Contains("reset"))
 		{
 			var p = Camera.main.transform.position + Camera.main.transform.forward;
 			gameObject.transform.position = p;
@@ -159,6 +159,19 @@ public class MicrophoneManager : MonoBehaviour
 		{
 			tempColors.Add(Color.white);
 			command = true;
+		}
+		if (text.Contains("rainbow") || text.Contains("dance for me"))
+		{
+			tempColors = new List<Color>()
+			{
+				Color.red,
+				new Color(1, .5f, 0),
+				Color.green,
+				Color.blue,
+				new Color(.5f, 0, .5f),
+				Color.magenta,
+				Color.white
+			};
 		}
 		if (tempColors.Count > 0)
 		{

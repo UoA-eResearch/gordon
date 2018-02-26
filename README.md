@@ -5,7 +5,7 @@ Art project in collaboration with Shannon Novak
 
 debug on/off  
 come here  
-detected colors: red,orange,green,blue,purple,pink|magenta,white  
+detected colors: red,orange,green,blue,purple,pink|magenta,white, rainbow|dance for me  
 grow|big  
 shrink|small|smoke  
 gordon|golden|garden  
