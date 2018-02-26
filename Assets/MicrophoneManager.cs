@@ -32,6 +32,7 @@ public class MicrophoneManager : MonoBehaviour
 	private float startTime = 0f;
 	private float colorChangeTime = 0f;
 	private Multiplayer multiplayer;
+	private bool isDuplicating = false;
 
 	// Use this for initialization
 	void Start()
@@ -59,7 +60,7 @@ public class MicrophoneManager : MonoBehaviour
 		//HandleSpeech("extend and duplicate");
 
 		dictationRecognizer = new DictationRecognizer(ConfidenceLevel.Rejected);
-		dictationRecognizer.AutoSilenceTimeoutSeconds = 5;
+		dictationRecognizer.AutoSilenceTimeoutSeconds = 2;
 
 		dictationRecognizer.DictationHypothesis += (text) =>
 		{
@@ -210,15 +211,13 @@ public class MicrophoneManager : MonoBehaviour
 				clones.Add(clone.transform, targetPos);
 			}
 			duplicated = true;
+			isDuplicating = true;
 			startTime = Time.time;
 			command = true;
 		}
 		else if ((text.Contains("single") || text.Contains("reset")) && duplicated)
 		{
-			foreach (var clone in clones.Keys.ToList())
-			{
-				clones[clone] = gordonDefault.transform.position;
-			}
+			isDuplicating = false;
 			startTime = Time.time;
 			command = true;
 		}
@@ -234,7 +233,10 @@ public class MicrophoneManager : MonoBehaviour
 					clone.Key.Find("Gordon piece 2").gameObject.SetActive(true);
 				}
 			}
-			manipulationRecognizer.StartCapturingGestures();
+			if (manipulationRecognizer != null)
+			{
+				manipulationRecognizer.StartCapturingGestures();
+			}
 			command = true;
 		}
 		else if (text.Contains("remove") || text.Contains("reset"))
@@ -381,18 +383,25 @@ public class MicrophoneManager : MonoBehaviour
 			{
 				if (clone.Key)
 				{
-					clone.Key.position = Vector3.Lerp(clone.Key.position, clone.Value, (Time.time - startTime) / 20);
-					if (clone.Value == gordonDefault.transform.position && clone.Key.position == gordonDefault.transform.position)
+					if (isDuplicating)
 					{
-						Destroy(clone.Key.gameObject);
+						clone.Key.position = Vector3.Lerp(gordonDefault.transform.position, clone.Value, (Time.time - startTime) / 2);
 					}
 					else
 					{
-						allDone = false;
+						clone.Key.position = Vector3.Lerp(clone.Value, gordonDefault.transform.position, (Time.time - startTime) / 2);
+						if (clone.Key.position == gordonDefault.transform.position)
+						{
+							Destroy(clone.Key.gameObject);
+						}
+						else
+						{
+							allDone = false;
+						}
 					}
 				}
 			}
-			if (allDone)
+			if (!isDuplicating && allDone)
 			{
 				duplicated = false;
 			}
