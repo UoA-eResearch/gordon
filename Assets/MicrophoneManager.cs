@@ -120,7 +120,7 @@ public class MicrophoneManager : MonoBehaviour
 		if (text.Contains("come here"))
 		{
 			var p = Camera.main.transform.position + Camera.main.transform.forward;
-			gameObject.transform.position = new Vector3(p.x, gameObject.transform.position.y, p.z);
+			gameObject.transform.position = p;
 			command = true;
 		}
 		var tempColors = new List<Color>();

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.Networking.Types;
 
 public class Multiplayer : MonoBehaviour {
 
@@ -29,7 +30,7 @@ public class Multiplayer : MonoBehaviour {
 		ConnectionConfig config = new ConnectionConfig();
 		reliable = config.AddChannel(QosType.Reliable);
 		unreliable = config.AddChannel(QosType.Unreliable);
-		HostTopology topology = new HostTopology(config, 10);
+		HostTopology topology = new HostTopology(config, 100);
 		hostId = NetworkTransport.AddHost(topology, port);
 		deviceId = SystemInfo.deviceUniqueIdentifier;
 		byte[] bytes = Encoding.ASCII.GetBytes(deviceId);
@@ -65,13 +66,22 @@ public class Multiplayer : MonoBehaviour {
 		int bufferSize = 1024;
 		int dataSize;
 		byte error;
+		int recPort;
+		string addr;
 		NetworkEventType recData = NetworkTransport.ReceiveFromHost(hostId, out connectionId, out channelId, recBuffer, bufferSize, out dataSize, out error);
 		switch (recData)
 		{
 			case NetworkEventType.Nothing:         //1
 				break;
 			case NetworkEventType.ConnectEvent:    //2
-				Debug.Log("Connect request: " + (NetworkError)error + " on conId " + connectionId);
+				NetworkID network;
+				NodeID dstNode;
+				NetworkTransport.GetConnectionInfo(hostId, connectionId, out addr, out recPort, out network, out dstNode, out error);
+				Debug.Log("Connect request: " + (NetworkError)error + " on conId " + connectionId + " addr " + addr + " port " + recPort + " net " + network + " dstNode " + dstNode);
+				if (!otherPlayerConnections.ContainsValue(addr))
+				{
+					otherPlayerConnections[connectionId] = addr;
+				}
 				break;
 			case NetworkEventType.DataEvent:       //3
 				string data = Encoding.ASCII.GetString(recBuffer);
@@ -86,19 +96,18 @@ public class Multiplayer : MonoBehaviour {
 				otherPlayerConnections.Remove(connectionId);
 				break;
 			case NetworkEventType.BroadcastEvent:
-				int recPort;
-				string conInfo = NetworkTransport.GetBroadcastConnectionInfo(hostId, out recPort, out error);
+				addr = NetworkTransport.GetBroadcastConnectionInfo(hostId, out recPort, out error);
 				int recSize;
 				NetworkTransport.GetBroadcastConnectionMessage(hostId, recBuffer, bufferSize, out recSize, out error);
 				string message = Encoding.ASCII.GetString(recBuffer, 0, recSize);
-				//Debug.Log("saw broadcast from " + conInfo + " with message of len " + message.Length +  ":" +  message + "|");
+				//Debug.Log("saw broadcast from " + addr + " with message of len " + message.Length +  ":" +  message + "|");
 				if (message != deviceId || !ignoreSelf)
 				{
-					if (!otherPlayerConnections.ContainsValue(conInfo))
+					if (!otherPlayerConnections.ContainsValue(addr))
 					{
-						int conId = NetworkTransport.Connect(hostId, conInfo, port, 0, out error);
-						Debug.Log("Connect attempt to " + conInfo + " result: " + (NetworkError)error + " conid:" + conId);
-						otherPlayerConnections[conId] = conInfo;
+						int conId = NetworkTransport.Connect(hostId, addr, port, 0, out error);
+						Debug.Log("Connect attempt to " + addr + " result: " + (NetworkError)error + " conid:" + conId);
+						otherPlayerConnections[conId] = addr;
 					}
 				}
 				break;
