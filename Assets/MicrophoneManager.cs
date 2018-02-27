@@ -551,7 +551,7 @@ public class MicrophoneManager : MonoBehaviour
 	IEnumerator GetToneAnalysis(string text)
 	{
 		var headers = new Dictionary<string, string>() {
-			{ "Authorization", "Basic ZjBmYTZlNjEtODJlNy00YmY2LWFkZWItNzM5MmUwMjUzYzhiOlQ4bEN1WWx3RWVWSQ==" },
+			{ "Authorization", "Basic ZWI5ZjlhMmEtM2RiYy00MTEwLWIzZWYtOTEzYWM4MjY3MzA1OlRDUDJJSTB6Z2ZPZQ==" },
 			{ "Content-Type", "text/plain" }
 		};
 		var www = new WWW("https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-01-01&sentences=false", Encoding.ASCII.GetBytes(text), headers);
