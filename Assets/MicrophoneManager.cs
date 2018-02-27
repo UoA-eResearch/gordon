@@ -16,6 +16,7 @@ public class MicrophoneManager : MonoBehaviour
 	public GameObject gordonDefault;
 	public GameObject piece1;
 	public GameObject piece2;
+	public Transform menu;
 	private DictationRecognizer dictationRecognizer;
 	private GestureRecognizer manipulationRecognizer;
 	private Dictionary<string, Color> emotionColors;
@@ -57,7 +58,7 @@ public class MicrophoneManager : MonoBehaviour
 		targetScale = Vector3.one * .01f;
 
 		//StartCoroutine(GetToneAnalysis("I'm happy"));
-		//HandleSpeech("extend and duplicate");
+		//HandleSpeech("menu on");
 
 		dictationRecognizer = new DictationRecognizer(ConfidenceLevel.Rejected);
 		dictationRecognizer.AutoSilenceTimeoutSeconds = 2;
@@ -93,12 +94,102 @@ public class MicrophoneManager : MonoBehaviour
 		dictationRecognizer.Start();
 
 		manipulationRecognizer = new GestureRecognizer();
-		manipulationRecognizer.SetRecognizableGestures(GestureSettings.ManipulationTranslate);
+		manipulationRecognizer.SetRecognizableGestures(GestureSettings.ManipulationTranslate | GestureSettings.Tap);
+		manipulationRecognizer.TappedEvent += ManipulationRecognizer_TappedEvent;
 		manipulationRecognizer.ManipulationUpdatedEvent += ManipulationRecognizer_ManipulationUpdatedEvent;
 		manipulationRecognizer.ManipulationCompletedEvent += ManipulationRecognizer_ManipulationCompletedEvent;
 		manipulationRecognizer.ManipulationCanceledEvent += ManipulationRecognizer_ManipulationCompletedEvent;
-		//manipulationRecognizer.StartCapturingGestures();
+		manipulationRecognizer.StartCapturingGestures();
 
+	}
+
+	private void ManipulationRecognizer_TappedEvent(InteractionSourceKind source, int tapCount, Ray headRay)
+	{
+		Debug.Log("tap!");
+		RaycastHit hit;
+		string tappedObjectName = "nothing";
+		if (Physics.Raycast(headRay, out hit))
+		{
+			tappedObjectName = hit.collider.gameObject.name;
+		}
+		else
+		{
+			float minDist = float.PositiveInfinity;
+			foreach (Transform child in menu)
+			{
+				float distance = Vector3.Cross(headRay.direction, child.position - headRay.origin).magnitude;
+				if (distance < minDist)
+				{
+					minDist = distance;
+					tappedObjectName = child.name;
+				}
+			}
+		}
+		Debug.Log("hit: " + tappedObjectName);
+		switch (tappedObjectName) {
+			case "debug":
+				HandleSpeech("debug " + (debug.gameObject.activeInHierarchy ? "off" : "on"));
+				break;
+			case "big":
+				if (targetScale == Vector3.one * .01f)
+				{
+					HandleSpeech("small");
+				}
+				else
+				{
+					HandleSpeech("big");
+				}
+				break;
+			case "send":
+				HandleSpeech("send " + (multiplayer.send ? "off" : "on"));
+				break;
+			case "come here":
+				gameObject.transform.position = Camera.main.transform.position + -Camera.main.transform.right;
+				break;
+			case "gordon":
+				HandleSpeech("gordon");
+				break;
+			case "emotion":
+				HandleSpeech("emotion " + (emotion ? "off" : "on"));
+				break;
+			case "recieve":
+				HandleSpeech("recieve " + (multiplayer.recieve ? "off" : "on"));
+				break;
+			case "duplicate":
+				if (duplicated)
+				{
+					HandleSpeech("single");
+				}
+				else
+				{
+					HandleSpeech("duplicate");
+				}
+				break;
+			case "extend":
+				if (piece1.activeInHierarchy && piece2.activeInHierarchy)
+				{
+					HandleSpeech("remove");
+				}
+				else
+				{
+					HandleSpeech("extend");
+				}
+				break;
+			case "reset":
+				HandleSpeech("reset");
+				gameObject.transform.position = Camera.main.transform.position + -Camera.main.transform.right;
+				break;
+			case "multiplayer":
+				if (multiplayer.send && multiplayer.recieve)
+				{
+					HandleSpeech("multiplayer off");
+				}
+				else
+				{
+					HandleSpeech("multiplayer on");
+				}
+				break;
+		}
 	}
 
 	public void HandleSpeech(string text)
@@ -111,11 +202,13 @@ public class MicrophoneManager : MonoBehaviour
 		if (text.Contains("debug off") || text.Contains("the bug off"))
 		{
 			debug.gameObject.SetActive(false);
+			menu.Find("debug").GetComponent<Renderer>().material.color = Color.red;
 			command = true;
 		}
 		else if (text.Contains("debug on") || text.Contains("the bug on"))
 		{
 			debug.gameObject.SetActive(true);
+			menu.Find("debug").GetComponent<Renderer>().material.color = Color.green;
 			command = true;
 		}
 		if (text.Contains("come here") || text.Contains("reset"))
@@ -181,11 +274,13 @@ public class MicrophoneManager : MonoBehaviour
 		if (text.Contains("grow") || text.Contains("big") || text.Contains("reset"))
 		{
 			targetScale = Vector3.one * .01f;
+			menu.Find("big").GetComponent<Renderer>().material.color = Color.green;
 			command = true;
 		}
 		else if (text.Contains("shrink") || text.Contains("small") || text.Contains("smoke"))
 		{
 			targetScale = Vector3.one * .001f;
+			menu.Find("big").GetComponent<Renderer>().material.color = Color.red;
 			command = true;
 		}
 		if (text.Contains("gordon") || text.Contains("golden") || text.Contains("garden"))
@@ -199,11 +294,13 @@ public class MicrophoneManager : MonoBehaviour
 		{
 			emotion = true;
 			command = true;
+			menu.Find("emotion").GetComponent<Renderer>().material.color = Color.green;
 		}
 		else if (text.Contains("emotion off"))
 		{
 			emotion = false;
 			command = true;
+			menu.Find("emotion").GetComponent<Renderer>().material.color = Color.red;
 		}
 		if ((text.Contains("duplicate") || text.Contains("copy") || text.Contains("coffee")) && !duplicated)
 		{
@@ -227,12 +324,14 @@ public class MicrophoneManager : MonoBehaviour
 			isDuplicating = true;
 			startTime = Time.time;
 			command = true;
+			menu.Find("duplicate").GetComponent<Renderer>().material.color = Color.green;
 		}
 		else if ((text.Contains("single") || text.Contains("reset")) && duplicated)
 		{
 			isDuplicating = false;
 			startTime = Time.time;
 			command = true;
+			menu.Find("duplicate").GetComponent<Renderer>().material.color = Color.red;
 		}
 		if (text.Contains("extend") || text.Contains("extent"))
 		{
@@ -246,11 +345,8 @@ public class MicrophoneManager : MonoBehaviour
 					clone.Key.Find("Gordon piece 2").gameObject.SetActive(true);
 				}
 			}
-			if (manipulationRecognizer != null)
-			{
-				manipulationRecognizer.StartCapturingGestures();
-			}
 			command = true;
+			menu.Find("extend").GetComponent<Renderer>().material.color = Color.green;
 		}
 		else if (text.Contains("remove") || text.Contains("reset"))
 		{
@@ -264,45 +360,61 @@ public class MicrophoneManager : MonoBehaviour
 					clone.Key.Find("Gordon piece 2").gameObject.SetActive(false);
 				}
 			}
-			manipulationRecognizer.StopCapturingGestures();
 			command = true;
+			menu.Find("extend").GetComponent<Renderer>().material.color = Color.red;
 		}
 		if (text.Contains("send off"))
 		{
 			multiplayer.send = false;
 			command = true;
+			menu.Find("send").GetComponent<Renderer>().material.color = Color.red;
 		}
 		else if (text.Contains("send on"))
 		{
 			multiplayer.send = true;
 			command = true;
+			menu.Find("send").GetComponent<Renderer>().material.color = Color.green;
 		}
 		if (text.Contains("recieve off"))
 		{
 			multiplayer.recieve = false;
 			command = true;
+			menu.Find("recieve").GetComponent<Renderer>().material.color = Color.red;
 		}
 		else if (text.Contains("recieve on"))
 		{
 			multiplayer.recieve = true;
 			command = true;
+			menu.Find("recieve").GetComponent<Renderer>().material.color = Color.green;
 		}
 		if (text.Contains("multiplayer off"))
 		{
 			multiplayer.send = false;
 			multiplayer.recieve = false;
 			command = true;
+			menu.Find("multiplayer").GetComponent<Renderer>().material.color = Color.red;
 		}
 		else if (text.Contains("multiplayer on"))
 		{
 			multiplayer.send = true;
 			multiplayer.recieve = true;
 			command = true;
+			menu.Find("multiplayer").GetComponent<Renderer>().material.color = Color.green;
 		}
 		if (text.Contains("reset"))
 		{
 			currentColors = defaultColors;
 			command = true;
+		}
+		if (text.Contains("menu off"))
+		{
+			menu.gameObject.SetActive(false);
+		}
+		else if (text.Contains("menu on"))
+		{
+			menu.gameObject.SetActive(true);
+			menu.transform.position = Camera.main.transform.position + Camera.main.transform.forward;
+			menu.transform.rotation = Camera.main.transform.rotation;
 		}
 		if (!command && emotion)
 		{
