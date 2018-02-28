@@ -409,12 +409,14 @@ public class MicrophoneManager : MonoBehaviour
 		if (text.Contains("menu off"))
 		{
 			menu.gameObject.SetActive(false);
+			command = true;
 		}
 		else if (text.Contains("menu on"))
 		{
 			menu.gameObject.SetActive(true);
 			menu.transform.position = Camera.main.transform.position + Camera.main.transform.forward;
 			menu.transform.rotation = Camera.main.transform.rotation;
+			command = true;
 		}
 		if (!command && emotion)
 		{
