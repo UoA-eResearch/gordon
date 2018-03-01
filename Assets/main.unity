@@ -1122,6 +1122,7 @@ GameObject:
   - component: {fileID: 998609614}
   - component: {fileID: 998609611}
   - component: {fileID: 998609615}
+  - component: {fileID: 998609630}
   m_Layer: 0
   m_Name: gordon
   m_TagString: Untagged
@@ -1340,7 +1341,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2119611d3bbe32545b49fcdad299f9f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ignoreSelf: 1
+  ignoreSelf: 0
   recieve: 1
   send: 1
 --- !u!1 &998609616
@@ -1547,6 +1548,13 @@ MeshFilter:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 998609616}
   m_Mesh: {fileID: 4300000, guid: c301756f24d92b5459377f64d173eba9, type: 3}
+--- !u!362 &998609630
+WorldAnchor:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 998609610}
+  serializedVersion: 2
 --- !u!1 &1007861597
 GameObject:
   m_ObjectHideFlags: 0
