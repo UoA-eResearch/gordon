@@ -218,7 +218,7 @@ public class MicrophoneManager : MonoBehaviour
 			command = true;
 		}
 		var tempColors = new List<Color>();
-		if (text.Contains("red"))
+		if (text.Contains("red") || text.Contains("reed") || text.Contains("read"))
 		{
 			tempColors.Add(Color.red);
 			command = true;
@@ -333,7 +333,7 @@ public class MicrophoneManager : MonoBehaviour
 			command = true;
 			menu.Find("duplicate").GetComponent<Renderer>().material.color = Color.red;
 		}
-		if (text.Contains("extend") || text.Contains("extent"))
+		if (text.Contains("extend") || text.Contains("extent") || text.Contains("boost") || text.Contains("expand") || text.Contains("build") || text.Contains("sprout"))
 		{
 			piece1.SetActive(true);
 			piece2.SetActive(true);

@@ -5,14 +5,14 @@ Art project in collaboration with Shannon Novak
 
 debug on/off  
 come here  
-detected colors: red,orange,green,blue,purple,pink|magenta,white, rainbow|dance for me  
+detected colors: red|reed|read,orange,green,blue,purple,pink|magenta,white, rainbow|dance for me  
 grow|big  
 shrink|small|smoke  
 gordon|golden|garden  
 emotion on/off  
 duplicate|copy|coffee  
 single  
-extend|extent  
+extend|extent|boost|expand|build|sprout  
 remove  
 reset  
 send on/off  
